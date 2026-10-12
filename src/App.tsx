@@ -3,6 +3,7 @@ import Header from './components/Header';
 import InputForm from './components/InputForm';
 import DataTable from './components/DataTable';
 import Rekap from './components/Rekap';
+import HelpModal from './components/HelpModal';
 import { PerjalananDinas } from './types';
 
 const STORAGE_KEY = 'perjalanan_dinas_data';
@@ -12,6 +13,7 @@ function App() {
   const [data, setData] = useState<PerjalananDinas[]>([]);
   const [editData, setEditData] = useState<PerjalananDinas | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Load data from localStorage
   useEffect(() => {
@@ -22,6 +24,13 @@ function App() {
       } catch (e) {
         console.error('Error loading data:', e);
       }
+    }
+
+    // Tampilkan panduan otomatis saat pertama kali dibuka
+    const hasSeenHelp = localStorage.getItem('has_seen_help');
+    if (!hasSeenHelp) {
+      setIsHelpOpen(true);
+      localStorage.setItem('has_seen_help', 'true');
     }
   }, []);
 
@@ -69,7 +78,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} onHelpClick={() => setIsHelpOpen(true)} />
+      
+      {/* Help Modal */}
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       {/* Notification */}
       {notification && (

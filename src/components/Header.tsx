@@ -3,9 +3,10 @@ import React from 'react';
 interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  onHelpClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onHelpClick }) => {
   return (
     <header className="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
       <div className="container mx-auto px-4 py-4">
@@ -52,6 +53,12 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             }`}
           >
             <span className="mr-2">📋</span> Rekapitulasi
+          </button>
+          <button
+            onClick={onHelpClick}
+            className="px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-blue-700/50 text-blue-100 hover:bg-blue-700 ml-auto"
+          >
+            <span className="mr-2">❓</span> Bantuan
           </button>
         </nav>
       </div>
