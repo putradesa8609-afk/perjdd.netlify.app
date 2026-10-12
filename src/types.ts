@@ -1,4 +1,5 @@
 export interface Personil {
+  nip: string;
   nama: string;
   jabatan: string;
   biayaTransport: number;
@@ -15,6 +16,7 @@ export interface PerjalananDinas {
   lokasiPerjalanan: string;
   lamaPerjalanan: number;
   laporanHasil: string;
+  nipPejabat: string;
   pejabatPemberiPerintah: string;
   personil: Personil[];
   totalBiayaKeseluruhan: number;

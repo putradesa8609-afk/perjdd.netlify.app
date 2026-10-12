@@ -7,6 +7,15 @@ interface InputFormProps {
   onCancelEdit: () => void;
 }
 
+const emptyPersonil = (): Personil => ({
+  nip: '',
+  nama: '',
+  jabatan: '',
+  biayaTransport: 0,
+  biayaUangSaku: 0,
+  totalBiaya: 0,
+});
+
 const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit }) => {
   const [formData, setFormData] = useState({
     nomorSurat: '',
@@ -15,12 +24,11 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     tujuanPerjalanan: '',
     lokasiPerjalanan: '',
     laporanHasil: '',
+    nipPejabat: '',
     pejabatPemberiPerintah: '',
   });
 
-  const [personilList, setPersonilList] = useState<Personil[]>([
-    { nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }
-  ]);
+  const [personilList, setPersonilList] = useState<Personil[]>([emptyPersonil()]);
 
   useEffect(() => {
     if (editData) {
@@ -31,11 +39,10 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
         tujuanPerjalanan: editData.tujuanPerjalanan,
         lokasiPerjalanan: editData.lokasiPerjalanan,
         laporanHasil: editData.laporanHasil,
+        nipPejabat: editData.nipPejabat,
         pejabatPemberiPerintah: editData.pejabatPemberiPerintah,
       });
-      setPersonilList(editData.personil.length > 0 ? editData.personil : [
-        { nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }
-      ]);
+      setPersonilList(editData.personil.length > 0 ? editData.personil : [emptyPersonil()]);
     }
   }, [editData]);
 
@@ -51,7 +58,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
   };
 
   const handleAddPersonil = () => {
-    setPersonilList([...personilList, { nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
+    setPersonilList([...personilList, emptyPersonil()]);
   };
 
   const handleRemovePersonil = (index: number) => {
@@ -84,7 +91,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     const lamaPerjalanan = calculateLamaPerjalanan();
     const totalBiaya = personilList.reduce((sum, p) => sum + p.totalBiaya, 0);
     
-    const data: PerjalananDinas = {
+    const dataPerjalanan: PerjalananDinas = {
       id: editData ? editData.id : Date.now().toString(),
       nomorSurat: formData.nomorSurat,
       tanggalBerangkat: formData.tanggalBerangkat,
@@ -93,13 +100,14 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       lokasiPerjalanan: formData.lokasiPerjalanan,
       lamaPerjalanan,
       laporanHasil: formData.laporanHasil,
+      nipPejabat: formData.nipPejabat,
       pejabatPemberiPerintah: formData.pejabatPemberiPerintah,
       personil: personilList,
       totalBiayaKeseluruhan: totalBiaya,
       createdAt: editData ? editData.createdAt : new Date().toISOString(),
     };
 
-    onSubmit(data);
+    onSubmit(dataPerjalanan);
     
     // Reset form
     setFormData({
@@ -109,9 +117,10 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       tujuanPerjalanan: '',
       lokasiPerjalanan: '',
       laporanHasil: '',
+      nipPejabat: '',
       pejabatPemberiPerintah: '',
     });
-    setPersonilList([{ nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
+    setPersonilList([emptyPersonil()]);
   };
 
   const handleCancel = () => {
@@ -122,9 +131,10 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       tujuanPerjalanan: '',
       lokasiPerjalanan: '',
       laporanHasil: '',
+      nipPejabat: '',
       pejabatPemberiPerintah: '',
     });
-    setPersonilList([{ nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
+    setPersonilList([emptyPersonil()]);
     onCancelEdit();
   };
 
@@ -234,7 +244,18 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">NIP *</label>
+                    <input
+                      type="text"
+                      required
+                      value={personil.nip}
+                      onChange={(e) => handlePersonilChange(index, 'nip', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                      placeholder="NIP Personil"
+                    />
+                  </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Nama Personil *</label>
                     <input
@@ -342,16 +363,29 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
         {/* Section 4: Pejabat */}
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
           <h3 className="text-sm font-semibold text-blue-700 mb-4 uppercase tracking-wide">🏛️ Pejabat Pemberi Perintah</h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama & Jabatan Pejabat *</label>
-            <input
-              type="text"
-              required
-              value={formData.pejabatPemberiPerintah}
-              onChange={(e) => setFormData({ ...formData, pejabatPemberiPerintah: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="Nama dan jabatan pejabat pemberi perintah"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">NIP Pejabat *</label>
+              <input
+                type="text"
+                required
+                value={formData.nipPejabat}
+                onChange={(e) => setFormData({ ...formData, nipPejabat: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                placeholder="NIP Pejabat"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama & Jabatan Pejabat *</label>
+              <input
+                type="text"
+                required
+                value={formData.pejabatPemberiPerintah}
+                onChange={(e) => setFormData({ ...formData, pejabatPemberiPerintah: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                placeholder="Nama dan jabatan pejabat pemberi perintah"
+              />
+            </div>
           </div>
         </div>
 

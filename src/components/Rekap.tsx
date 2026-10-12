@@ -47,16 +47,16 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
   // Group by personil
   const personilGroups = filteredData.reduce((acc, item) => {
     item.personil.forEach(p => {
-      const key = p.nama;
+      const key = `${p.nip}-${p.nama}`;
       if (!acc[key]) {
-        acc[key] = { count: 0, totalBiaya: 0, jabatan: p.jabatan, totalHari: 0 };
+        acc[key] = { nip: p.nip, nama: p.nama, count: 0, totalBiaya: 0, jabatan: p.jabatan, totalHari: 0 };
       }
       acc[key].count += 1;
       acc[key].totalBiaya += p.totalBiaya;
       acc[key].totalHari += item.lamaPerjalanan;
     });
     return acc;
-  }, {} as Record<string, { count: number; totalBiaya: number; jabatan: string; totalHari: number }>);
+  }, {} as Record<string, { nip: string; nama: string; count: number; totalBiaya: number; jabatan: string; totalHari: number }>);
 
   // Get unique years
   const years = [...new Set(data.map(item => new Date(item.tanggalBerangkat).getFullYear()))].sort();
@@ -92,9 +92,9 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
       ]),
       [''],
       ['Rekap per Personil'],
-      ['Nama', 'Jabatan', 'Jumlah Perjalanan', 'Total Hari', 'Total Biaya'],
-      ...Object.entries(personilGroups).map(([nama, info]) => [
-        nama, info.jabatan, info.count, info.totalHari, info.totalBiaya
+      ['NIP', 'Nama', 'Jabatan', 'Jumlah Perjalanan', 'Total Hari', 'Total Biaya'],
+      ...Object.entries(personilGroups).map(([_, info]) => [
+        info.nip, info.nama, info.jabatan, info.count, info.totalHari, info.totalBiaya
       ]),
     ];
 
@@ -109,12 +109,14 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
           'Nomor Surat': item.nomorSurat,
           'Tgl Berangkat': item.tanggalBerangkat,
           'Tgl Kembali': item.tanggalKembali,
+          'NIP Personil': p.nip,
           'Nama Personil': p.nama,
           'Jabatan': p.jabatan,
           'Tujuan': item.tujuanPerjalanan,
           'Lokasi': item.lokasiPerjalanan,
           'Lama (Hari)': item.lamaPerjalanan,
           'Laporan': item.laporanHasil,
+          'NIP Pejabat': item.nipPejabat,
           'Pejabat': item.pejabatPemberiPerintah,
           'Transport': p.biayaTransport,
           'Uang Saku': p.biayaUangSaku,
@@ -357,6 +359,7 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
             <table className="w-full text-sm">
               <thead className="bg-green-50">
                 <tr>
+                  <th className="px-3 py-2 text-left font-semibold text-green-700">NIP</th>
                   <th className="px-3 py-2 text-left font-semibold text-green-700">Nama</th>
                   <th className="px-3 py-2 text-center font-semibold text-green-700">Jumlah</th>
                   <th className="px-3 py-2 text-center font-semibold text-green-700">Hari</th>
@@ -366,13 +369,14 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
               <tbody>
                 {Object.entries(personilGroups).length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-gray-500">Belum ada data</td>
+                    <td colSpan={5} className="px-3 py-6 text-center text-gray-500">Belum ada data</td>
                   </tr>
                 ) : (
-                  Object.entries(personilGroups).map(([nama, info]) => (
-                    <tr key={nama} className="border-b border-gray-100">
+                  Object.entries(personilGroups).map(([_, info]) => (
+                    <tr key={`${info.nip}-${info.nama}`} className="border-b border-gray-100">
+                      <td className="px-3 py-2.5 font-mono text-xs">{info.nip}</td>
                       <td className="px-3 py-2.5">
-                        <p className="font-medium">{nama}</p>
+                        <p className="font-medium">{info.nama}</p>
                         <p className="text-xs text-gray-500">{info.jabatan}</p>
                       </td>
                       <td className="px-3 py-2.5 text-center">
