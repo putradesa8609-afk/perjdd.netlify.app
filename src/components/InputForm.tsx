@@ -7,15 +7,6 @@ interface InputFormProps {
   onCancelEdit: () => void;
 }
 
-const emptyPersonil = (): Personil => ({
-  nip: '',
-  nama: '',
-  jabatan: '',
-  biayaTransport: 0,
-  biayaUangSaku: 0,
-  totalBiaya: 0,
-});
-
 const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit }) => {
   const [formData, setFormData] = useState({
     nomorSurat: '',
@@ -28,7 +19,9 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     pejabatPemberiPerintah: '',
   });
 
-  const [personilList, setPersonilList] = useState<Personil[]>([emptyPersonil()]);
+  const [personilList, setPersonilList] = useState<Personil[]>([
+    { nip: '', nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }
+  ]);
 
   useEffect(() => {
     if (editData) {
@@ -39,10 +32,12 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
         tujuanPerjalanan: editData.tujuanPerjalanan,
         lokasiPerjalanan: editData.lokasiPerjalanan,
         laporanHasil: editData.laporanHasil,
-        nipPejabat: editData.nipPejabat,
+        nipPejabat: editData.nipPejabat || '',
         pejabatPemberiPerintah: editData.pejabatPemberiPerintah,
       });
-      setPersonilList(editData.personil.length > 0 ? editData.personil : [emptyPersonil()]);
+      setPersonilList(editData.personil.length > 0 ? editData.personil.map(p => ({ ...p, nip: p.nip || '' })) : [
+        { nip: '', nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }
+      ]);
     }
   }, [editData]);
 
@@ -58,7 +53,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
   };
 
   const handleAddPersonil = () => {
-    setPersonilList([...personilList, emptyPersonil()]);
+    setPersonilList([...personilList, { nip: '', nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
   };
 
   const handleRemovePersonil = (index: number) => {
@@ -91,7 +86,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     const lamaPerjalanan = calculateLamaPerjalanan();
     const totalBiaya = personilList.reduce((sum, p) => sum + p.totalBiaya, 0);
     
-    const dataPerjalanan: PerjalananDinas = {
+    const newData: PerjalananDinas = {
       id: editData ? editData.id : Date.now().toString(),
       nomorSurat: formData.nomorSurat,
       tanggalBerangkat: formData.tanggalBerangkat,
@@ -107,7 +102,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       createdAt: editData ? editData.createdAt : new Date().toISOString(),
     };
 
-    onSubmit(dataPerjalanan);
+    onSubmit(newData);
     
     // Reset form
     setFormData({
@@ -120,7 +115,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       nipPejabat: '',
       pejabatPemberiPerintah: '',
     });
-    setPersonilList([emptyPersonil()]);
+    setPersonilList([{ nip: '', nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
   };
 
   const handleCancel = () => {
@@ -134,7 +129,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       nipPejabat: '',
       pejabatPemberiPerintah: '',
     });
-    setPersonilList([emptyPersonil()]);
+    setPersonilList([{ nip: '', nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
     onCancelEdit();
   };
 
@@ -252,8 +247,8 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
                       required
                       value={personil.nip}
                       onChange={(e) => handlePersonilChange(index, 'nip', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
-                      placeholder="NIP Personil"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="Nomor Induk Pegawai"
                     />
                   </div>
                   <div>
@@ -371,8 +366,8 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
                 required
                 value={formData.nipPejabat}
                 onChange={(e) => setFormData({ ...formData, nipPejabat: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
-                placeholder="NIP Pejabat"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                placeholder="Nomor Induk Pegawai pejabat"
               />
             </div>
             <div>

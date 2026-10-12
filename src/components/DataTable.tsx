@@ -38,6 +38,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
       'Tgl Kembali': item.tanggalKembali,
       'Jumlah Personil': item.personil.length,
       'Nama Personil': item.personil.map(p => p.nama).join(', '),
+      'NIP Personil': item.personil.map(p => p.nip).join(', '),
       'Tujuan': item.tujuanPerjalanan,
       'Lokasi': item.lokasiPerjalanan,
       'Lama (Hari)': item.lamaPerjalanan,
@@ -49,8 +50,8 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
     const ws1 = XLSX.utils.json_to_sheet(summaryData);
     ws1['!cols'] = [
       { wch: 5 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-      { wch: 40 }, { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 18 },
-      { wch: 25 }, { wch: 18 },
+      { wch: 40 }, { wch: 40 }, { wch: 30 }, { wch: 20 }, { wch: 10 },
+      { wch: 20 }, { wch: 25 }, { wch: 18 },
     ];
     XLSX.utils.book_append_sheet(wb, ws1, 'Ringkasan');
 
@@ -80,9 +81,9 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
 
     const ws2 = XLSX.utils.json_to_sheet(detailData);
     ws2['!cols'] = [
-      { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 25 },
-      { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 40 },
-      { wch: 18 }, { wch: 25 }, { wch: 18 }, { wch: 15 }, { wch: 18 },
+      { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 20 },
+      { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 40 },
+      { wch: 20 }, { wch: 25 }, { wch: 18 }, { wch: 15 }, { wch: 18 },
     ];
     XLSX.utils.book_append_sheet(wb, ws2, 'Detail Personil');
 
@@ -157,10 +158,10 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
               <th className="px-3 py-3 text-left font-semibold">No. Surat</th>
               <th className="px-3 py-3 text-left font-semibold">Tgl Berangkat</th>
               <th className="px-3 py-3 text-left font-semibold">Tgl Kembali</th>
-              <th className="px-3 py-3 text-left font-semibold">Personil</th>
+              <th className="px-3 py-3 text-left font-semibold">Personil (NIP / Nama)</th>
               <th className="px-3 py-3 text-left font-semibold">Lokasi</th>
-              <th className="px-3 py-3 text-left font-semibold">Pejabat</th>
               <th className="px-3 py-3 text-center font-semibold">Lama</th>
+              <th className="px-3 py-3 text-center font-semibold">Jml</th>
               <th className="px-3 py-3 text-right font-semibold">Total Biaya</th>
               <th className="px-3 py-3 text-center font-semibold">Aksi</th>
             </tr>
@@ -187,24 +188,23 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                   <td className="px-3 py-3">
                     <div className="max-w-xs">
                       {item.personil.map((p, i) => (
-                        <div key={i} className="text-xs leading-relaxed">
-                          <div className="font-medium">{p.nama}</div>
-                          <div className="text-gray-400 font-mono text-[10px]">NIP: {p.nip}</div>
-                          <div className="text-gray-500 text-[10px]">{p.jabatan}</div>
+                        <div key={i} className="text-xs">
+                          <span className="text-gray-500 font-mono">{p.nip}</span>
+                          <span className="mx-1 text-gray-300">|</span>
+                          <span className="font-medium">{p.nama}</span>
                         </div>
                       ))}
                     </div>
                   </td>
                   <td className="px-3 py-3">{item.lokasiPerjalanan}</td>
-                  <td className="px-3 py-3">
-                    <div className="text-xs">
-                      <div className="font-medium">{item.pejabatPemberiPerintah}</div>
-                      <div className="text-gray-400 font-mono text-[10px]">NIP: {item.nipPejabat}</div>
-                    </div>
-                  </td>
                   <td className="px-3 py-3 text-center">
                     <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
                       {item.lamaPerjalanan} hr
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                      {item.personil.length} org
                     </span>
                   </td>
                   <td className="px-3 py-3 text-right font-mono text-xs font-bold text-green-700">
@@ -267,7 +267,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
       {/* Detail Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedItem(null)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-xl flex justify-between items-center">
               <h3 className="font-bold text-lg">Detail Perjalanan Dinas</h3>
               <button onClick={() => setSelectedItem(null)} className="text-white/80 hover:text-white">
@@ -285,7 +285,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 uppercase">Pejabat Pemberi Perintah</p>
                   <p className="font-medium">{selectedItem.pejabatPemberiPerintah}</p>
-                  <p className="text-xs text-gray-500 font-mono mt-0.5">NIP: {selectedItem.nipPejabat}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 font-mono">NIP: {selectedItem.nipPejabat}</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 uppercase">Tanggal Berangkat</p>
@@ -334,7 +334,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                     {selectedItem.personil.map((p, i) => (
                       <tr key={i} className="border-t border-gray-100">
                         <td className="px-3 py-2 text-gray-500">{i + 1}</td>
-                        <td className="px-3 py-2 font-mono text-xs">{p.nip}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-gray-600">{p.nip}</td>
                         <td className="px-3 py-2 font-medium">{p.nama}</td>
                         <td className="px-3 py-2 text-gray-600">{p.jabatan}</td>
                         <td className="px-3 py-2 text-right font-mono text-xs">{formatCurrency(p.biayaTransport)}</td>
