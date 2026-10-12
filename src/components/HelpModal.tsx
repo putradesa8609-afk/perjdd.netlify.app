@@ -13,6 +13,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const sections = [
     { id: 'penggunaan', label: '📖 Cara Penggunaan', icon: '📖' },
     { id: 'database', label: '💾 Penyimpanan Data', icon: '💾' },
+    { id: 'deployment', label: '🌐 Akses Perangkat Lain', icon: '🌐' },
     { id: 'fitur', label: '✨ Fitur Utama', icon: '✨' },
     { id: 'tips', label: '💡 Tips', icon: '💡' },
   ];
@@ -244,6 +245,158 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                       <li>Simpan file tersebut sebagai cadangan data Anda</li>
                     </ol>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'deployment' && (
+              <div className="space-y-5">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-bold text-blue-800 mb-2">🌐 Cara Mengakses dari Perangkat Lain</h4>
+                  <p className="text-sm text-blue-700">
+                    Aplikasi ini dapat diakses dari perangkat lain (HP, tablet, komputer lain) dengan beberapa cara berikut:
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h5 className="font-bold text-amber-800 mb-2 flex items-center gap-2">
+                    <span className="text-2xl">⚠️</span>
+                    Catatan Penting tentang Data
+                  </h5>
+                  <p className="text-sm text-amber-700 mb-2">
+                    Karena data disimpan di <strong>LocalStorage browser</strong>, maka:
+                  </p>
+                  <ul className="text-sm text-amber-700 space-y-1 list-disc ml-4">
+                    <li>Data <strong>TIDAK</strong> otomatis muncul di perangkat lain</li>
+                    <li>Setiap perangkat memiliki data yang terpisah</li>
+                    <li>Untuk memindahkan data, gunakan fitur <strong>Export/Import Excel</strong></li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="border-l-4 border-green-500 pl-4 py-2 bg-green-50 rounded-r-lg">
+                    <h5 className="font-bold text-gray-800 flex items-center gap-2">
+                      <span className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                      Hosting Online (Paling Mudah)
+                    </h5>
+                    <p className="text-sm text-gray-600 mt-1 mb-2">
+                      Deploy aplikasi ke hosting gratis agar bisa diakses dari mana saja via internet:
+                    </p>
+                    <div className="bg-white rounded-lg p-3 space-y-2 text-sm">
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-green-600">✓</span>
+                        <div>
+                          <strong>Vercel</strong> (vercel.com) - Paling direkomendasikan
+                          <p className="text-xs text-gray-500">Upload folder <code className="bg-gray-100 px-1 rounded">dist</code>, dapat URL gratis</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-green-600">✓</span>
+                        <div>
+                          <strong>Netlify</strong> (netlify.com) - Drag & drop mudah
+                          <p className="text-xs text-gray-500">Tinggal drag folder dist ke website, langsung online</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-green-600">✓</span>
+                        <div>
+                          <strong>GitHub Pages</strong> - Gratis untuk akun GitHub
+                          <p className="text-xs text-gray-500">Upload ke repository GitHub, aktifkan Pages</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-green-600">✓</span>
+                        <div>
+                          <strong>Cloudflare Pages</strong> - Cepat & gratis
+                          <p className="text-xs text-gray-500">Performa tinggi, CDN global</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg">
+                    <h5 className="font-bold text-gray-800 flex items-center gap-2">
+                      <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                      Jaringan Lokal (LAN Kantor)
+                    </h5>
+                    <p className="text-sm text-gray-600 mt-1 mb-2">
+                      Untuk akses di jaringan kantor/sekolah yang sama:
+                    </p>
+                    <ol className="text-sm text-gray-600 space-y-1 list-decimal ml-4">
+                      <li>Install <strong>Node.js</strong> di komputer server</li>
+                      <li>Jalankan perintah: <code className="bg-gray-200 px-2 py-0.5 rounded">npx serve dist -l 3000</code></li>
+                      <li>Catat IP address komputer server (contoh: 192.168.1.100)</li>
+                      <li>Di perangkat lain, buka: <code className="bg-gray-200 px-2 py-0.5 rounded">http://192.168.1.100:3000</code></li>
+                    </ol>
+                    <p className="text-xs text-gray-500 mt-2">
+                      💡 Semua perangkat harus terhubung ke WiFi/jaringan yang sama
+                    </p>
+                  </div>
+
+                  <div className="border-l-4 border-purple-500 pl-4 py-2 bg-purple-50 rounded-r-lg">
+                    <h5 className="font-bold text-gray-800 flex items-center gap-2">
+                      <span className="bg-purple-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                      Server Sendiri (VPS/Cloud)
+                    </h5>
+                    <p className="text-sm text-gray-600 mt-1 mb-2">
+                      Untuk akses profesional dengan domain sendiri:
+                    </p>
+                    <ol className="text-sm text-gray-600 space-y-1 list-decimal ml-4">
+                      <li>Sewa VPS (DigitalOcean, AWS, Niagahoster, dll)</li>
+                      <li>Install web server (Nginx/Apache)</li>
+                      <li>Upload isi folder <code className="bg-gray-200 px-1 rounded">dist</code> ke server</li>
+                      <li>Beli domain dan arahkan ke server</li>
+                    </ol>
+                  </div>
+
+                  <div className="border-l-4 border-amber-500 pl-4 py-2 bg-amber-50 rounded-r-lg">
+                    <h5 className="font-bold text-gray-800 flex items-center gap-2">
+                      <span className="bg-amber-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
+                      File Lokal (USB/Shared Folder)
+                    </h5>
+                    <p className="text-sm text-gray-600 mt-1 mb-2">
+                      Cara paling sederhana tanpa internet:
+                    </p>
+                    <ol className="text-sm text-gray-600 space-y-1 list-decimal ml-4">
+                      <li>Copy folder <code className="bg-gray-200 px-1 rounded">dist</code> ke USB/flashdisk</li>
+                      <li>Pindahkan ke komputer lain</li>
+                      <li>Buka file <code className="bg-gray-200 px-1 rounded">index.html</code> dengan browser</li>
+                    </ol>
+                    <p className="text-xs text-gray-500 mt-2">
+                      ⚠️ Setiap komputer memiliki data terpisah
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                  <h5 className="font-bold text-green-800 mb-2 flex items-center gap-2">
+                    <span className="text-xl">🚀</span>
+                    Rekomendasi Terbaik
+                  </h5>
+                  <div className="text-sm text-green-700 space-y-2">
+                    <p>
+                      <strong>Untuk penggunaan pribadi/kantor kecil:</strong> Gunakan <strong>Vercel</strong> atau <strong>Netlify</strong> (gratis, mudah, cepat)
+                    </p>
+                    <p>
+                      <strong>Untuk jaringan kantor:</strong> Gunakan <strong>Jaringan Lokal (LAN)</strong> dengan komputer sebagai server
+                    </p>
+                    <p>
+                      <strong>Untuk organisasi besar:</strong> Gunakan <strong>VPS dengan domain</strong> untuk akses profesional
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h5 className="font-bold text-gray-800 mb-2">📋 Langkah-Langkah Deploy ke Vercel (Contoh)</h5>
+                  <ol className="text-sm text-gray-600 space-y-2 list-decimal ml-4">
+                    <li>Buka <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">vercel.com</a> dan daftar akun gratis</li>
+                    <li>Klik "Add New Project"</li>
+                    <li>Pilih "Upload" (bukan import dari GitHub)</li>
+                    <li>Drag & drop folder <code className="bg-gray-200 px-1 rounded">dist</code> dari aplikasi ini</li>
+                    <li>Tunggu proses deploy (1-2 menit)</li>
+                    <li>Dapatkan URL seperti: <code className="bg-gray-200 px-1 rounded">https://nama-project.vercel.app</code></li>
+                    <li>URL tersebut bisa diakses dari perangkat manapun!</li>
+                  </ol>
                 </div>
               </div>
             )}
