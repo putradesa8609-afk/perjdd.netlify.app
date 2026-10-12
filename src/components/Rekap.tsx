@@ -23,9 +23,12 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
 
   // Statistics
   const totalPerjalanan = filteredData.length;
-  const totalBiaya = filteredData.reduce((sum, item) => sum + item.totalBiaya, 0);
-  const totalTransport = filteredData.reduce((sum, item) => sum + item.biayaTransport, 0);
-  const totalUangSaku = filteredData.reduce((sum, item) => sum + item.biayaUangSaku, 0);
+  const totalPersonil = filteredData.reduce((sum, item) => sum + item.personil.length, 0);
+  const totalBiaya = filteredData.reduce((sum, item) => sum + item.totalBiayaKeseluruhan, 0);
+  const totalTransport = filteredData.reduce((sum, item) => 
+    sum + item.personil.reduce((s, p) => s + p.biayaTransport, 0), 0);
+  const totalUangSaku = filteredData.reduce((sum, item) => 
+    sum + item.personil.reduce((s, p) => s + p.biayaUangSaku, 0), 0);
   const rataRataBiaya = totalPerjalanan > 0 ? totalBiaya / totalPerjalanan : 0;
   const totalHari = filteredData.reduce((sum, item) => sum + item.lamaPerjalanan, 0);
 
@@ -36,20 +39,22 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
       acc[key] = { count: 0, totalBiaya: 0, personil: new Set<string>() };
     }
     acc[key].count += 1;
-    acc[key].totalBiaya += item.totalBiaya;
-    acc[key].personil.add(item.namaPersonil);
+    acc[key].totalBiaya += item.totalBiayaKeseluruhan;
+    item.personil.forEach(p => acc[key].personil.add(p.nama));
     return acc;
   }, {} as Record<string, { count: number; totalBiaya: number; personil: Set<string> }>);
 
   // Group by personil
   const personilGroups = filteredData.reduce((acc, item) => {
-    const key = item.namaPersonil;
-    if (!acc[key]) {
-      acc[key] = { count: 0, totalBiaya: 0, jabatan: item.jabatanPersonil, totalHari: 0 };
-    }
-    acc[key].count += 1;
-    acc[key].totalBiaya += item.totalBiaya;
-    acc[key].totalHari += item.lamaPerjalanan;
+    item.personil.forEach(p => {
+      const key = p.nama;
+      if (!acc[key]) {
+        acc[key] = { count: 0, totalBiaya: 0, jabatan: p.jabatan, totalHari: 0 };
+      }
+      acc[key].count += 1;
+      acc[key].totalBiaya += p.totalBiaya;
+      acc[key].totalHari += item.lamaPerjalanan;
+    });
     return acc;
   }, {} as Record<string, { count: number; totalBiaya: number; jabatan: string; totalHari: number }>);
 
@@ -72,17 +77,18 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
       ['REKAPITULASI PERJALANAN DINAS'],
       [''],
       ['Ringkasan'],
-      ['Total Perjalanan', totalPerjalanan],
+      ['Total Surat Perintah', totalPerjalanan],
+      ['Total Personil Dituraskan', totalPersonil],
       ['Total Hari Perjalanan', totalHari],
       ['Total Biaya Transport', totalTransport],
       ['Total Uang Saku', totalUangSaku],
       ['Total Keseluruhan', totalBiaya],
-      ['Rata-rata Biaya per Perjalanan', rataRataBiaya],
+      ['Rata-rata Biaya per Surat', rataRataBiaya],
       [''],
       ['Rekap per Lokasi'],
-      ['Lokasi', 'Jumlah Perjalanan', 'Total Biaya'],
+      ['Lokasi', 'Jumlah Surat', 'Total Personil', 'Total Biaya'],
       ...Object.entries(lokasiGroups).map(([lokasi, info]) => [
-        lokasi, info.count, info.totalBiaya
+        lokasi, info.count, info.personil.size, info.totalBiaya
       ]),
       [''],
       ['Rekap per Personil'],
@@ -96,22 +102,26 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
     XLSX.utils.book_append_sheet(wb, ws1, 'Rekapitulasi');
 
     // Sheet 2: Detail Data
-    const detailData = filteredData.map((item, index) => ({
-      'No': index + 1,
-      'Nomor Surat': item.nomorSurat,
-      'Tgl Berangkat': item.tanggalBerangkat,
-      'Tgl Kembali': item.tanggalKembali,
-      'Nama': item.namaPersonil,
-      'Jabatan': item.jabatanPersonil,
-      'Tujuan': item.tujuanPerjalanan,
-      'Lokasi': item.lokasiPerjalanan,
-      'Lama (Hari)': item.lamaPerjalanan,
-      'Laporan': item.laporanHasil,
-      'Pejabat': item.pejabatPemberiPerintah,
-      'Transport': item.biayaTransport,
-      'Uang Saku': item.biayaUangSaku,
-      'Total': item.totalBiaya,
-    }));
+    const detailData: any[] = [];
+    filteredData.forEach((item) => {
+      item.personil.forEach((p) => {
+        detailData.push({
+          'Nomor Surat': item.nomorSurat,
+          'Tgl Berangkat': item.tanggalBerangkat,
+          'Tgl Kembali': item.tanggalKembali,
+          'Nama Personil': p.nama,
+          'Jabatan': p.jabatan,
+          'Tujuan': item.tujuanPerjalanan,
+          'Lokasi': item.lokasiPerjalanan,
+          'Lama (Hari)': item.lamaPerjalanan,
+          'Laporan': item.laporanHasil,
+          'Pejabat': item.pejabatPemberiPerintah,
+          'Transport': p.biayaTransport,
+          'Uang Saku': p.biayaUangSaku,
+          'Total Biaya': p.totalBiaya,
+        });
+      });
+    });
 
     const ws2 = XLSX.utils.json_to_sheet(detailData);
     XLSX.utils.book_append_sheet(wb, ws2, 'Detail Data');
@@ -189,14 +199,28 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm">Total Perjalanan</p>
+              <p className="text-blue-100 text-sm">Total Surat</p>
               <p className="text-3xl font-bold mt-1">{totalPerjalanan}</p>
-              <p className="text-blue-200 text-xs mt-1">kegiatan</p>
+              <p className="text-blue-200 text-xs mt-1">perintah perjalanan</p>
             </div>
             <div className="bg-white/20 p-3 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-5 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-100 text-sm">Total Personil</p>
+              <p className="text-3xl font-bold mt-1">{totalPersonil}</p>
+              <p className="text-indigo-200 text-xs mt-1">orang ditugaskan</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
           </div>
@@ -231,24 +255,53 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm">Rata-rata Biaya</p>
-              <p className="text-xl font-bold mt-1">{formatCurrency(rataRataBiaya)}</p>
-              <p className="text-purple-200 text-xs mt-1">per perjalanan</p>
+      {/* Cost Breakdown */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span className="bg-amber-100 p-1.5 rounded-lg">💰</span>
+          Rincian Biaya
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+            <p className="text-sm text-blue-600 font-medium">Total Biaya Transport</p>
+            <p className="text-2xl font-bold text-blue-700 mt-2">{formatCurrency(totalTransport)}</p>
+            <div className="mt-2 bg-blue-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all"
+                style={{ width: totalBiaya > 0 ? `${(totalTransport / totalBiaya) * 100}%` : '0%' }}
+              ></div>
             </div>
-            <div className="bg-white/20 p-3 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
+            <p className="text-xs text-blue-500 mt-1">
+              {totalBiaya > 0 ? ((totalTransport / totalBiaya) * 100).toFixed(1) : 0}% dari total
+            </p>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <p className="text-sm text-green-600 font-medium">Total Uang Saku</p>
+            <p className="text-2xl font-bold text-green-700 mt-2">{formatCurrency(totalUangSaku)}</p>
+            <div className="mt-2 bg-green-200 rounded-full h-2">
+              <div 
+                className="bg-green-600 h-2 rounded-full transition-all"
+                style={{ width: totalBiaya > 0 ? `${(totalUangSaku / totalBiaya) * 100}%` : '0%' }}
+              ></div>
             </div>
+            <p className="text-xs text-green-500 mt-1">
+              {totalBiaya > 0 ? ((totalUangSaku / totalBiaya) * 100).toFixed(1) : 0}% dari total
+            </p>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+            <p className="text-sm text-purple-600 font-medium">Total Keseluruhan</p>
+            <p className="text-2xl font-bold text-purple-700 mt-2">{formatCurrency(totalBiaya)}</p>
+            <div className="mt-2 bg-purple-200 rounded-full h-2">
+              <div className="bg-purple-600 h-2 rounded-full w-full"></div>
+            </div>
+            <p className="text-xs text-purple-500 mt-1">100% keseluruhan biaya</p>
           </div>
         </div>
       </div>
 
-      {/* Cost Breakdown */}
+      {/* Rekap per Lokasi & Personil */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Rekap per Lokasi */}
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -261,14 +314,15 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
               <thead className="bg-blue-50">
                 <tr>
                   <th className="px-3 py-2 text-left font-semibold text-blue-700">Lokasi</th>
-                  <th className="px-3 py-2 text-center font-semibold text-blue-700">Jumlah</th>
+                  <th className="px-3 py-2 text-center font-semibold text-blue-700">Jumlah Surat</th>
+                  <th className="px-3 py-2 text-center font-semibold text-blue-700">Personil</th>
                   <th className="px-3 py-2 text-right font-semibold text-blue-700">Total Biaya</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(lokasiGroups).length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-gray-500">Belum ada data</td>
+                    <td colSpan={4} className="px-3 py-6 text-center text-gray-500">Belum ada data</td>
                   </tr>
                 ) : (
                   Object.entries(lokasiGroups).map(([lokasi, info]) => (
@@ -276,7 +330,12 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
                       <td className="px-3 py-2.5 font-medium">{lokasi}</td>
                       <td className="px-3 py-2.5 text-center">
                         <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                          {info.count}x
+                          {info.count} surat
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                          {info.personil.size} org
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-xs">{formatCurrency(info.totalBiaya)}</td>
@@ -328,50 +387,6 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Biaya Breakdown */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="bg-amber-100 p-1.5 rounded-lg">💰</span>
-          Rincian Biaya
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-            <p className="text-sm text-blue-600 font-medium">Total Biaya Transport</p>
-            <p className="text-2xl font-bold text-blue-700 mt-2">{formatCurrency(totalTransport)}</p>
-            <div className="mt-2 bg-blue-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all"
-                style={{ width: totalBiaya > 0 ? `${(totalTransport / totalBiaya) * 100}%` : '0%' }}
-              ></div>
-            </div>
-            <p className="text-xs text-blue-500 mt-1">
-              {totalBiaya > 0 ? ((totalTransport / totalBiaya) * 100).toFixed(1) : 0}% dari total
-            </p>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-            <p className="text-sm text-green-600 font-medium">Total Uang Saku</p>
-            <p className="text-2xl font-bold text-green-700 mt-2">{formatCurrency(totalUangSaku)}</p>
-            <div className="mt-2 bg-green-200 rounded-full h-2">
-              <div 
-                className="bg-green-600 h-2 rounded-full transition-all"
-                style={{ width: totalBiaya > 0 ? `${(totalUangSaku / totalBiaya) * 100}%` : '0%' }}
-              ></div>
-            </div>
-            <p className="text-xs text-green-500 mt-1">
-              {totalBiaya > 0 ? ((totalUangSaku / totalBiaya) * 100).toFixed(1) : 0}% dari total
-            </p>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-            <p className="text-sm text-purple-600 font-medium">Total Keseluruhan</p>
-            <p className="text-2xl font-bold text-purple-700 mt-2">{formatCurrency(totalBiaya)}</p>
-            <div className="mt-2 bg-purple-200 rounded-full h-2">
-              <div className="bg-purple-600 h-2 rounded-full w-full"></div>
-            </div>
-            <p className="text-xs text-purple-500 mt-1">100% keseluruhan biaya</p>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PerjalananDinas } from '../types';
+import { PerjalananDinas, Personil } from '../types';
 
 interface InputFormProps {
   onSubmit: (data: PerjalananDinas) => void;
@@ -12,15 +12,15 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     nomorSurat: '',
     tanggalBerangkat: '',
     tanggalKembali: '',
-    namaPersonil: '',
-    jabatanPersonil: '',
     tujuanPerjalanan: '',
     lokasiPerjalanan: '',
     laporanHasil: '',
     pejabatPemberiPerintah: '',
-    biayaTransport: '0',
-    biayaUangSaku: '0',
   });
+
+  const [personilList, setPersonilList] = useState<Personil[]>([
+    { nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }
+  ]);
 
   useEffect(() => {
     if (editData) {
@@ -28,15 +28,14 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
         nomorSurat: editData.nomorSurat,
         tanggalBerangkat: editData.tanggalBerangkat,
         tanggalKembali: editData.tanggalKembali,
-        namaPersonil: editData.namaPersonil,
-        jabatanPersonil: editData.jabatanPersonil,
         tujuanPerjalanan: editData.tujuanPerjalanan,
         lokasiPerjalanan: editData.lokasiPerjalanan,
         laporanHasil: editData.laporanHasil,
         pejabatPemberiPerintah: editData.pejabatPemberiPerintah,
-        biayaTransport: String(editData.biayaTransport),
-        biayaUangSaku: String(editData.biayaUangSaku),
       });
+      setPersonilList(editData.personil.length > 0 ? editData.personil : [
+        { nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }
+      ]);
     }
   }, [editData]);
 
@@ -51,27 +50,52 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     return 0;
   };
 
+  const handleAddPersonil = () => {
+    setPersonilList([...personilList, { nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
+  };
+
+  const handleRemovePersonil = (index: number) => {
+    if (personilList.length > 1) {
+      setPersonilList(personilList.filter((_, i) => i !== index));
+    }
+  };
+
+  const handlePersonilChange = (index: number, field: keyof Personil, value: string | number) => {
+    const updated = [...personilList];
+    if (field === 'biayaTransport' || field === 'biayaUangSaku') {
+      updated[index] = {
+        ...updated[index],
+        [field]: Number(value),
+        totalBiaya: field === 'biayaTransport' 
+          ? Number(value) + updated[index].biayaUangSaku
+          : updated[index].biayaTransport + Number(value),
+      };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+    setPersonilList(updated);
+  };
+
+  const totalBiayaKeseluruhan = personilList.reduce((sum, p) => sum + p.totalBiaya, 0);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const lamaPerjalanan = calculateLamaPerjalanan();
-    const totalBiaya = Number(formData.biayaTransport) + Number(formData.biayaUangSaku);
+    const totalBiaya = personilList.reduce((sum, p) => sum + p.totalBiaya, 0);
     
     const data: PerjalananDinas = {
       id: editData ? editData.id : Date.now().toString(),
       nomorSurat: formData.nomorSurat,
       tanggalBerangkat: formData.tanggalBerangkat,
       tanggalKembali: formData.tanggalKembali,
-      namaPersonil: formData.namaPersonil,
-      jabatanPersonil: formData.jabatanPersonil,
       tujuanPerjalanan: formData.tujuanPerjalanan,
       lokasiPerjalanan: formData.lokasiPerjalanan,
       lamaPerjalanan,
       laporanHasil: formData.laporanHasil,
       pejabatPemberiPerintah: formData.pejabatPemberiPerintah,
-      biayaTransport: Number(formData.biayaTransport),
-      biayaUangSaku: Number(formData.biayaUangSaku),
-      totalBiaya,
+      personil: personilList,
+      totalBiayaKeseluruhan: totalBiaya,
       createdAt: editData ? editData.createdAt : new Date().toISOString(),
     };
 
@@ -82,15 +106,12 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       nomorSurat: '',
       tanggalBerangkat: '',
       tanggalKembali: '',
-      namaPersonil: '',
-      jabatanPersonil: '',
       tujuanPerjalanan: '',
       lokasiPerjalanan: '',
       laporanHasil: '',
       pejabatPemberiPerintah: '',
-      biayaTransport: '0',
-      biayaUangSaku: '0',
     });
+    setPersonilList([{ nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
   };
 
   const handleCancel = () => {
@@ -98,16 +119,21 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
       nomorSurat: '',
       tanggalBerangkat: '',
       tanggalKembali: '',
-      namaPersonil: '',
-      jabatanPersonil: '',
       tujuanPerjalanan: '',
       lokasiPerjalanan: '',
       laporanHasil: '',
       pejabatPemberiPerintah: '',
-      biayaTransport: '0',
-      biayaUangSaku: '0',
     });
+    setPersonilList([{ nama: '', jabatan: '', biayaTransport: 0, biayaUangSaku: 0, totalBiaya: 0 }]);
     onCancelEdit();
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
@@ -172,33 +198,105 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
           )}
         </div>
 
-        {/* Section 2: Personil */}
+        {/* Section 2: Personil (Multiple) */}
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <h3 className="text-sm font-semibold text-blue-700 mb-4 uppercase tracking-wide">👤 Data Personil</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Personil *</label>
-              <input
-                type="text"
-                required
-                value={formData.namaPersonil}
-                onChange={(e) => setFormData({ ...formData, namaPersonil: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                placeholder="Nama lengkap personil"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Jabatan *</label>
-              <input
-                type="text"
-                required
-                value={formData.jabatanPersonil}
-                onChange={(e) => setFormData({ ...formData, jabatanPersonil: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                placeholder="Jabatan personil"
-              />
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wide">👤 Data Personil ({personilList.length} orang)</h3>
+            <button
+              type="button"
+              onClick={handleAddPersonil}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium transition-colors flex items-center gap-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Tambah Personil
+            </button>
           </div>
+          
+          <div className="space-y-3">
+            {personilList.map((personil, index) => (
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 relative">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    Personil #{index + 1}
+                  </span>
+                  {personilList.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePersonil(index)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors"
+                      title="Hapus personil"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Nama Personil *</label>
+                    <input
+                      type="text"
+                      required
+                      value={personil.nama}
+                      onChange={(e) => handlePersonilChange(index, 'nama', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="Nama lengkap"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Jabatan *</label>
+                    <input
+                      type="text"
+                      required
+                      value={personil.jabatan}
+                      onChange={(e) => handlePersonilChange(index, 'jabatan', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="Jabatan"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Biaya Transport (Rp)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={personil.biayaTransport || ''}
+                      onChange={(e) => handlePersonilChange(index, 'biayaTransport', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Uang Saku (Rp)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={personil.biayaUangSaku || ''}
+                      onChange={(e) => handlePersonilChange(index, 'biayaUangSaku', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                {personil.totalBiaya > 0 && (
+                  <div className="mt-2 text-right">
+                    <span className="text-xs text-gray-500">Total: </span>
+                    <span className="text-sm font-bold text-green-700">{formatCurrency(personil.totalBiaya)}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Total biaya semua personil */}
+          {totalBiayaKeseluruhan > 0 && (
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex justify-between items-center">
+              <span className="text-sm font-medium text-green-700">💰 Total Biaya Seluruh Personil:</span>
+              <span className="text-lg font-bold text-green-800">{formatCurrency(totalBiayaKeseluruhan)}</span>
+            </div>
+          )}
         </div>
 
         {/* Section 3: Perjalanan */}
@@ -241,51 +339,19 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
           </div>
         </div>
 
-        {/* Section 4: Pejabat & Biaya */}
+        {/* Section 4: Pejabat */}
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <h3 className="text-sm font-semibold text-blue-700 mb-4 uppercase tracking-wide">💰 Pejabat & Biaya</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pejabat Pemberi Perintah *</label>
-              <input
-                type="text"
-                required
-                value={formData.pejabatPemberiPerintah}
-                onChange={(e) => setFormData({ ...formData, pejabatPemberiPerintah: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                placeholder="Nama dan jabatan pejabat pemberi perintah"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Biaya Transport (Rp) *</label>
-              <input
-                type="number"
-                required
-                min="0"
-                value={formData.biayaTransport}
-                onChange={(e) => setFormData({ ...formData, biayaTransport: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                placeholder="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Uang Saku (Rp) *</label>
-              <input
-                type="number"
-                required
-                min="0"
-                value={formData.biayaUangSaku}
-                onChange={(e) => setFormData({ ...formData, biayaUangSaku: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                placeholder="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Total Biaya</label>
-              <div className="w-full px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm font-bold text-green-700">
-                Rp {(Number(formData.biayaTransport) + Number(formData.biayaUangSaku)).toLocaleString('id-ID')}
-              </div>
-            </div>
+          <h3 className="text-sm font-semibold text-blue-700 mb-4 uppercase tracking-wide">🏛️ Pejabat Pemberi Perintah</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nama & Jabatan Pejabat *</label>
+            <input
+              type="text"
+              required
+              value={formData.pejabatPemberiPerintah}
+              onChange={(e) => setFormData({ ...formData, pejabatPemberiPerintah: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              placeholder="Nama dan jabatan pejabat pemberi perintah"
+            />
           </div>
         </div>
 

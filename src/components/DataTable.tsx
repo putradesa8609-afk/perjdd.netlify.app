@@ -14,9 +14,10 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
 
   const filteredData = data.filter(item => {
     const search = searchTerm.toLowerCase();
+    const personilNames = item.personil.map(p => p.nama.toLowerCase()).join(' ');
     return (
       item.nomorSurat.toLowerCase().includes(search) ||
-      item.namaPersonil.toLowerCase().includes(search) ||
+      personilNames.includes(search) ||
       item.lokasiPerjalanan.toLowerCase().includes(search) ||
       item.tujuanPerjalanan.toLowerCase().includes(search) ||
       item.pejabatPemberiPerintah.toLowerCase().includes(search)
@@ -24,34 +25,60 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
   });
 
   const exportToExcel = () => {
-    const exportData = data.map((item, index) => ({
+    const wb = XLSX.utils.book_new();
+    
+    // Sheet utama: Ringkasan per surat
+    const summaryData = data.map((item, index) => ({
       'No': index + 1,
       'Nomor Surat': item.nomorSurat,
       'Tgl Berangkat': item.tanggalBerangkat,
       'Tgl Kembali': item.tanggalKembali,
-      'Nama Personil': item.namaPersonil,
-      'Jabatan': item.jabatanPersonil,
+      'Jumlah Personil': item.personil.length,
+      'Nama Personil': item.personil.map(p => p.nama).join(', '),
       'Tujuan': item.tujuanPerjalanan,
       'Lokasi': item.lokasiPerjalanan,
       'Lama (Hari)': item.lamaPerjalanan,
-      'Laporan Hasil': item.laporanHasil,
       'Pejabat Pemberi Perintah': item.pejabatPemberiPerintah,
-      'Biaya Transport (Rp)': item.biayaTransport,
-      'Uang Saku (Rp)': item.biayaUangSaku,
-      'Total Biaya (Rp)': item.totalBiaya,
+      'Total Biaya (Rp)': item.totalBiayaKeseluruhan,
     }));
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data Perjalanan Dinas');
-    
-    // Set column widths
-    ws['!cols'] = [
-      { wch: 5 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 25 },
-      { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 40 },
-      { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+    const ws1 = XLSX.utils.json_to_sheet(summaryData);
+    ws1['!cols'] = [
+      { wch: 5 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 40 }, { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 25 }, { wch: 18 },
     ];
-    
+    XLSX.utils.book_append_sheet(wb, ws1, 'Ringkasan');
+
+    // Sheet detail per personil
+    const detailData: any[] = [];
+    data.forEach((item) => {
+      item.personil.forEach((p) => {
+        detailData.push({
+          'Nomor Surat': item.nomorSurat,
+          'Tgl Berangkat': item.tanggalBerangkat,
+          'Tgl Kembali': item.tanggalKembali,
+          'Nama Personil': p.nama,
+          'Jabatan': p.jabatan,
+          'Tujuan': item.tujuanPerjalanan,
+          'Lokasi': item.lokasiPerjalanan,
+          'Lama (Hari)': item.lamaPerjalanan,
+          'Laporan Hasil': item.laporanHasil,
+          'Pejabat': item.pejabatPemberiPerintah,
+          'Biaya Transport (Rp)': p.biayaTransport,
+          'Uang Saku (Rp)': p.biayaUangSaku,
+          'Total Biaya (Rp)': p.totalBiaya,
+        });
+      });
+    });
+
+    const ws2 = XLSX.utils.json_to_sheet(detailData);
+    ws2['!cols'] = [
+      { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 25 }, { wch: 20 },
+      { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 40 }, { wch: 25 },
+      { wch: 18 }, { wch: 15 }, { wch: 18 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Detail Personil');
+
     XLSX.writeFile(wb, `Data_Perjalanan_Dinas_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
@@ -84,7 +111,9 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-800">Data Perjalanan Dinas</h2>
-            <p className="text-sm text-gray-500">Total: {data.length} data perjalanan</p>
+            <p className="text-sm text-gray-500">
+              Total: {data.length} surat | {data.reduce((sum, item) => sum + item.personil.length, 0)} personil
+            </p>
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -121,20 +150,18 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
               <th className="px-3 py-3 text-left font-semibold">No. Surat</th>
               <th className="px-3 py-3 text-left font-semibold">Tgl Berangkat</th>
               <th className="px-3 py-3 text-left font-semibold">Tgl Kembali</th>
-              <th className="px-3 py-3 text-left font-semibold">Nama</th>
-              <th className="px-3 py-3 text-left font-semibold">Jabatan</th>
+              <th className="px-3 py-3 text-left font-semibold">Personil</th>
               <th className="px-3 py-3 text-left font-semibold">Lokasi</th>
               <th className="px-3 py-3 text-center font-semibold">Lama</th>
-              <th className="px-3 py-3 text-right font-semibold">Transport</th>
-              <th className="px-3 py-3 text-right font-semibold">Uang Saku</th>
-              <th className="px-3 py-3 text-right font-semibold">Total</th>
+              <th className="px-3 py-3 text-center font-semibold">Jml Org</th>
+              <th className="px-3 py-3 text-right font-semibold">Total Biaya</th>
               <th className="px-3 py-3 text-center font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
                   <div className="flex flex-col items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -150,17 +177,30 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                   <td className="px-3 py-3 font-mono text-xs">{item.nomorSurat}</td>
                   <td className="px-3 py-3 whitespace-nowrap">{formatDate(item.tanggalBerangkat)}</td>
                   <td className="px-3 py-3 whitespace-nowrap">{formatDate(item.tanggalKembali)}</td>
-                  <td className="px-3 py-3 font-medium">{item.namaPersonil}</td>
-                  <td className="px-3 py-3 text-gray-600">{item.jabatanPersonil}</td>
+                  <td className="px-3 py-3">
+                    <div className="max-w-xs">
+                      {item.personil.map((p, i) => (
+                        <div key={i} className="text-xs">
+                          <span className="font-medium">{p.nama}</span>
+                          <span className="text-gray-400 ml-1">({p.jabatan})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
                   <td className="px-3 py-3">{item.lokasiPerjalanan}</td>
                   <td className="px-3 py-3 text-center">
                     <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
                       {item.lamaPerjalanan} hr
                     </span>
                   </td>
-                  <td className="px-3 py-3 text-right font-mono text-xs">{formatCurrency(item.biayaTransport)}</td>
-                  <td className="px-3 py-3 text-right font-mono text-xs">{formatCurrency(item.biayaUangSaku)}</td>
-                  <td className="px-3 py-3 text-right font-mono text-xs font-bold text-green-700">{formatCurrency(item.totalBiaya)}</td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                      {item.personil.length} org
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono text-xs font-bold text-green-700">
+                    {formatCurrency(item.totalBiayaKeseluruhan)}
+                  </td>
                   <td className="px-3 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <button
@@ -205,14 +245,8 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
             <tfoot className="bg-gray-100 font-bold">
               <tr>
                 <td colSpan={8} className="px-3 py-3 text-right">TOTAL:</td>
-                <td className="px-3 py-3 text-right font-mono text-xs">
-                  {formatCurrency(filteredData.reduce((sum, item) => sum + item.biayaTransport, 0))}
-                </td>
-                <td className="px-3 py-3 text-right font-mono text-xs">
-                  {formatCurrency(filteredData.reduce((sum, item) => sum + item.biayaUangSaku, 0))}
-                </td>
                 <td className="px-3 py-3 text-right font-mono text-xs text-green-700">
-                  {formatCurrency(filteredData.reduce((sum, item) => sum + item.totalBiaya, 0))}
+                  {formatCurrency(filteredData.reduce((sum, item) => sum + item.totalBiayaKeseluruhan, 0))}
                 </td>
                 <td></td>
               </tr>
@@ -224,7 +258,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
       {/* Detail Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedItem(null)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-xl flex justify-between items-center">
               <h3 className="font-bold text-lg">Detail Perjalanan Dinas</h3>
               <button onClick={() => setSelectedItem(null)} className="text-white/80 hover:text-white">
@@ -252,14 +286,6 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                   <p className="font-medium">{formatDate(selectedItem.tanggalKembali)}</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 uppercase">Nama Personil</p>
-                  <p className="font-medium">{selectedItem.namaPersonil}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 uppercase">Jabatan</p>
-                  <p className="font-medium">{selectedItem.jabatanPersonil}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 uppercase">Tujuan Perjalanan</p>
                   <p className="font-medium">{selectedItem.tujuanPerjalanan}</p>
                 </div>
@@ -271,19 +297,57 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                   <p className="text-xs text-gray-500 uppercase">Lama Perjalanan</p>
                   <p className="font-medium">{selectedItem.lamaPerjalanan} hari</p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 uppercase">Biaya Transport</p>
-                  <p className="font-medium">{formatCurrency(selectedItem.biayaTransport)}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 uppercase">Uang Saku</p>
-                  <p className="font-medium">{formatCurrency(selectedItem.biayaUangSaku)}</p>
-                </div>
                 <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                  <p className="text-xs text-green-600 uppercase">Total Biaya</p>
-                  <p className="font-bold text-green-700">{formatCurrency(selectedItem.totalBiaya)}</p>
+                  <p className="text-xs text-green-600 uppercase">Total Biaya Keseluruhan</p>
+                  <p className="font-bold text-green-700">{formatCurrency(selectedItem.totalBiayaKeseluruhan)}</p>
                 </div>
               </div>
+
+              {/* Personil Detail */}
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-blue-50 px-4 py-2 border-b border-gray-200">
+                  <h4 className="font-semibold text-blue-700 text-sm">👥 Daftar Personil ({selectedItem.personil.length} orang)</h4>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">No</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Nama</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Jabatan</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Transport</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Uang Saku</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedItem.personil.map((p, i) => (
+                      <tr key={i} className="border-t border-gray-100">
+                        <td className="px-3 py-2 text-gray-500">{i + 1}</td>
+                        <td className="px-3 py-2 font-medium">{p.nama}</td>
+                        <td className="px-3 py-2 text-gray-600">{p.jabatan}</td>
+                        <td className="px-3 py-2 text-right font-mono text-xs">{formatCurrency(p.biayaTransport)}</td>
+                        <td className="px-3 py-2 text-right font-mono text-xs">{formatCurrency(p.biayaUangSaku)}</td>
+                        <td className="px-3 py-2 text-right font-mono text-xs font-bold text-green-700">{formatCurrency(p.totalBiaya)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50 font-bold">
+                    <tr>
+                      <td colSpan={3} className="px-3 py-2 text-right text-xs">TOTAL:</td>
+                      <td className="px-3 py-2 text-right font-mono text-xs">
+                        {formatCurrency(selectedItem.personil.reduce((s, p) => s + p.biayaTransport, 0))}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-xs">
+                        {formatCurrency(selectedItem.personil.reduce((s, p) => s + p.biayaUangSaku, 0))}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-xs text-green-700">
+                        {formatCurrency(selectedItem.totalBiayaKeseluruhan)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <p className="text-xs text-blue-600 uppercase mb-1">Laporan Hasil Pelaksanaan</p>
                 <p className="text-sm text-gray-700">{selectedItem.laporanHasil}</p>
