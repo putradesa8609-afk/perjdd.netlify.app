@@ -20,7 +20,17 @@ function App() {
     const storedData = localStorage.getItem(STORAGE_KEY);
     if (storedData) {
       try {
-        setData(JSON.parse(storedData));
+        const parsedData = JSON.parse(storedData);
+        // Data migration: normalize old data to include new fields (nip, nipPejabat)
+        const normalizedData: PerjalananDinas[] = parsedData.map((item: any) => ({
+          ...item,
+          nipPejabat: item.nipPejabat || '',
+          personil: (item.personil || []).map((p: any) => ({
+            ...p,
+            nip: p.nip || '',
+          })),
+        }));
+        setData(normalizedData);
       } catch (e) {
         console.error('Error loading data:', e);
       }

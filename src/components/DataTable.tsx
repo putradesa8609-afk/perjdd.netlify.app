@@ -14,16 +14,16 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
 
   const filteredData = data.filter(item => {
     const search = searchTerm.toLowerCase();
-    const personilNames = item.personil.map(p => p.nama.toLowerCase()).join(' ');
-    const personilNips = item.personil.map(p => p.nip.toLowerCase()).join(' ');
+    const personilNames = item.personil.map(p => (p.nama || '').toLowerCase()).join(' ');
+    const personilNips = item.personil.map(p => (p.nip || '').toLowerCase()).join(' ');
     return (
-      item.nomorSurat.toLowerCase().includes(search) ||
+      (item.nomorSurat || '').toLowerCase().includes(search) ||
       personilNames.includes(search) ||
       personilNips.includes(search) ||
-      item.lokasiPerjalanan.toLowerCase().includes(search) ||
-      item.tujuanPerjalanan.toLowerCase().includes(search) ||
-      item.pejabatPemberiPerintah.toLowerCase().includes(search) ||
-      item.nipPejabat.toLowerCase().includes(search)
+      (item.lokasiPerjalanan || '').toLowerCase().includes(search) ||
+      (item.tujuanPerjalanan || '').toLowerCase().includes(search) ||
+      (item.pejabatPemberiPerintah || '').toLowerCase().includes(search) ||
+      (item.nipPejabat || '').toLowerCase().includes(search)
     );
   });
 

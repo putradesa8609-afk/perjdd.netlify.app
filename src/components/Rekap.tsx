@@ -47,9 +47,9 @@ const Rekap: React.FC<RekapProps> = ({ data }) => {
   // Group by personil
   const personilGroups = filteredData.reduce((acc, item) => {
     item.personil.forEach(p => {
-      const key = `${p.nip}-${p.nama}`;
+      const key = `${p.nip || ''}-${p.nama || ''}`;
       if (!acc[key]) {
-        acc[key] = { nip: p.nip, nama: p.nama, count: 0, totalBiaya: 0, jabatan: p.jabatan, totalHari: 0 };
+        acc[key] = { nip: p.nip || '', nama: p.nama || '', count: 0, totalBiaya: 0, jabatan: p.jabatan || '', totalHari: 0 };
       }
       acc[key].count += 1;
       acc[key].totalBiaya += p.totalBiaya;
