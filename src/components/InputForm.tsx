@@ -10,6 +10,7 @@ interface InputFormProps {
 const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit }) => {
   const [formData, setFormData] = useState({
     nomorSurat: '',
+    tanggalSurat: '',
     tanggalBerangkat: '',
     tanggalKembali: '',
     tujuanPerjalanan: '',
@@ -27,6 +28,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     if (editData) {
       setFormData({
         nomorSurat: editData.nomorSurat,
+        tanggalSurat: editData.tanggalSurat || '',
         tanggalBerangkat: editData.tanggalBerangkat,
         tanggalKembali: editData.tanggalKembali,
         tujuanPerjalanan: editData.tujuanPerjalanan,
@@ -89,6 +91,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     const newData: PerjalananDinas = {
       id: editData ? editData.id : Date.now().toString(),
       nomorSurat: formData.nomorSurat,
+      tanggalSurat: formData.tanggalSurat,
       tanggalBerangkat: formData.tanggalBerangkat,
       tanggalKembali: formData.tanggalKembali,
       tujuanPerjalanan: formData.tujuanPerjalanan,
@@ -107,6 +110,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
     // Reset form
     setFormData({
       nomorSurat: '',
+      tanggalSurat: '',
       tanggalBerangkat: '',
       tanggalKembali: '',
       tujuanPerjalanan: '',
@@ -121,6 +125,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
   const handleCancel = () => {
     setFormData({
       nomorSurat: '',
+      tanggalSurat: '',
       tanggalBerangkat: '',
       tanggalKembali: '',
       tujuanPerjalanan: '',
@@ -161,8 +166,8 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
         {/* Section 1: Surat & Tanggal */}
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
           <h3 className="text-sm font-semibold text-blue-700 mb-4 uppercase tracking-wide">📄 Informasi Surat & Waktu</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Surat *</label>
               <input
                 type="text"
@@ -171,6 +176,16 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
                 onChange={(e) => setFormData({ ...formData, nomorSurat: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 placeholder="Contoh: 001/SPT/2024"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Surat *</label>
+              <input
+                type="date"
+                required
+                value={formData.tanggalSurat}
+                onChange={(e) => setFormData({ ...formData, tanggalSurat: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
             <div>
@@ -183,6 +198,8 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, editData, onCancelEdit 
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Kembali *</label>
               <input

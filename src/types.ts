@@ -10,6 +10,7 @@ export interface Personil {
 export interface PerjalananDinas {
   id: string;
   nomorSurat: string;
+  tanggalSurat: string;
   tanggalBerangkat: string;
   tanggalKembali: string;
   tujuanPerjalanan: string;

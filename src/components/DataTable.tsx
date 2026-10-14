@@ -34,15 +34,16 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
     const summaryData = data.map((item, index) => ({
       'No': index + 1,
       'Nomor Surat': item.nomorSurat,
+      'Tgl Surat': item.tanggalSurat || '',
       'Tgl Berangkat': item.tanggalBerangkat,
       'Tgl Kembali': item.tanggalKembali,
       'Jumlah Personil': item.personil.length,
       'Nama Personil': item.personil.map(p => p.nama).join(', '),
-      'NIP Personil': item.personil.map(p => p.nip).join(', '),
+      'NIP Personil': item.personil.map(p => p.nip || '').join(', '),
       'Tujuan': item.tujuanPerjalanan,
       'Lokasi': item.lokasiPerjalanan,
       'Lama (Hari)': item.lamaPerjalanan,
-      'NIP Pejabat': item.nipPejabat,
+      'NIP Pejabat': item.nipPejabat || '',
       'Pejabat Pemberi Perintah': item.pejabatPemberiPerintah,
       'Total Biaya (Rp)': item.totalBiayaKeseluruhan,
     }));
@@ -61,16 +62,17 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
       item.personil.forEach((p) => {
         detailData.push({
           'Nomor Surat': item.nomorSurat,
+          'Tgl Surat': item.tanggalSurat || '',
           'Tgl Berangkat': item.tanggalBerangkat,
           'Tgl Kembali': item.tanggalKembali,
-          'NIP Personil': p.nip,
+          'NIP Personil': p.nip || '',
           'Nama Personil': p.nama,
           'Jabatan': p.jabatan,
           'Tujuan': item.tujuanPerjalanan,
           'Lokasi': item.lokasiPerjalanan,
           'Lama (Hari)': item.lamaPerjalanan,
           'Laporan Hasil': item.laporanHasil,
-          'NIP Pejabat': item.nipPejabat,
+          'NIP Pejabat': item.nipPejabat || '',
           'Pejabat': item.pejabatPemberiPerintah,
           'Biaya Transport (Rp)': p.biayaTransport,
           'Uang Saku (Rp)': p.biayaUangSaku,
@@ -156,6 +158,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
             <tr>
               <th className="px-3 py-3 text-left font-semibold">No</th>
               <th className="px-3 py-3 text-left font-semibold">No. Surat</th>
+              <th className="px-3 py-3 text-left font-semibold">Tgl Surat</th>
               <th className="px-3 py-3 text-left font-semibold">Tgl Berangkat</th>
               <th className="px-3 py-3 text-left font-semibold">Tgl Kembali</th>
               <th className="px-3 py-3 text-left font-semibold">Personil (NIP / Nama)</th>
@@ -169,7 +172,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
           <tbody>
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
                   <div className="flex flex-col items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -183,6 +186,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                 <tr key={item.id} className={`border-b border-gray-100 hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                   <td className="px-3 py-3 font-medium text-gray-600">{index + 1}</td>
                   <td className="px-3 py-3 font-mono text-xs">{item.nomorSurat}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">{formatDate(item.tanggalSurat || '')}</td>
                   <td className="px-3 py-3 whitespace-nowrap">{formatDate(item.tanggalBerangkat)}</td>
                   <td className="px-3 py-3 whitespace-nowrap">{formatDate(item.tanggalKembali)}</td>
                   <td className="px-3 py-3">
@@ -253,7 +257,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
           {filteredData.length > 0 && (
             <tfoot className="bg-gray-100 font-bold">
               <tr>
-                <td colSpan={8} className="px-3 py-3 text-right">TOTAL:</td>
+                <td colSpan={9} className="px-3 py-3 text-right">TOTAL:</td>
                 <td className="px-3 py-3 text-right font-mono text-xs text-green-700">
                   {formatCurrency(filteredData.reduce((sum, item) => sum + item.totalBiayaKeseluruhan, 0))}
                 </td>
@@ -283,9 +287,13 @@ const DataTable: React.FC<DataTableProps> = ({ data, onEdit, onDelete }) => {
                   <p className="font-medium">{selectedItem.nomorSurat}</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 uppercase">Tanggal Surat</p>
+                  <p className="font-medium">{formatDate(selectedItem.tanggalSurat || '')}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 uppercase">Pejabat Pemberi Perintah</p>
                   <p className="font-medium">{selectedItem.pejabatPemberiPerintah}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 font-mono">NIP: {selectedItem.nipPejabat}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 font-mono">NIP: {selectedItem.nipPejabat || '-'}</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 uppercase">Tanggal Berangkat</p>

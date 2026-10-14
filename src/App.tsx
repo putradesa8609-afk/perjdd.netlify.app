@@ -21,9 +21,10 @@ function App() {
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
-        // Data migration: normalize old data to include new fields (nip, nipPejabat)
+        // Data migration: normalize old data to include new fields (nip, nipPejabat, tanggalSurat)
         const normalizedData: PerjalananDinas[] = parsedData.map((item: any) => ({
           ...item,
+          tanggalSurat: item.tanggalSurat || '',
           nipPejabat: item.nipPejabat || '',
           personil: (item.personil || []).map((p: any) => ({
             ...p,
